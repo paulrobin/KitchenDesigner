@@ -817,11 +817,40 @@
     island:{enabled:false,length:1.8,depth:0.9,overhang:true},
     client:{name:'',address:''},
   };
-  let spec, state={colors:{...DEFAULT_COLOURS}};
+  let spec, state={colors:{...DEFAULT_COLOURS}}, templateDefault=null;
+  function applySpecDefaults(){
+    if(spec.worktopEndOverhang==null)spec.worktopEndOverhang=0.01;
+    if(spec.handleWidth==null)spec.handleWidth=0.13;
+    if(!spec.client)spec.client={name:'',address:''};
+    if(!spec.doorStyle)spec.doorStyle='shaker';
+    if(!spec.handleStyle)spec.handleStyle='bar';
+    if(!spec.worktopMaterial)spec.worktopMaterial='quartz';
+    if(!spec.worktopEdge)spec.worktopEdge='square';
+    if(!spec.floorMaterial)spec.floorMaterial='wood';
+    if(!spec.window)spec.window=structuredClone(DEFAULT_SPEC.window);
+    if(!spec.doorway)spec.doorway=structuredClone(DEFAULT_SPEC.doorway);
+    if(!spec.island)spec.island=structuredClone(DEFAULT_SPEC.island);
+    if(!spec.runs)spec.runs=structuredClone(DEFAULT_SPEC.runs);
+    if(!spec.runs.B)spec.runs.B=structuredClone(DEFAULT_SPEC.runs.B);
+    if(!spec.runs.C)spec.runs.C=structuredClone(DEFAULT_SPEC.runs.C);
+    migrateWallCabs();
+  }
+  async function fetchTemplate(){
+    try{const res=await fetch('kitchen-design-template.json',{cache:'no-store'});
+      if(res.ok){const d=await res.json();if(d&&d.spec&&d.spec.runs&&d.spec.runs.A)return d;}
+    }catch(e){}
+    return null;
+  }
   function loadAll(){
     try{const saved=JSON.parse(localStorage.getItem(SPEC_KEY));
-      if(saved&&saved.spec&&saved.spec.runs&&saved.spec.runs.A){spec=saved.spec;if(spec.worktopEndOverhang==null)spec.worktopEndOverhang=0.01;if(spec.handleWidth==null)spec.handleWidth=0.13;if(!spec.client)spec.client={name:'',address:''};if(!spec.doorStyle)spec.doorStyle='shaker';if(!spec.handleStyle)spec.handleStyle='bar';if(!spec.worktopMaterial)spec.worktopMaterial='quartz';if(!spec.worktopEdge)spec.worktopEdge='square';if(!spec.floorMaterial)spec.floorMaterial='wood';migrateWallCabs();if(saved.colors)state.colors={...DEFAULT_COLOURS,...saved.colors};if(typeof saved.tod==='number')tod=saved.tod;return;}
+      if(saved&&saved.spec&&saved.spec.runs&&saved.spec.runs.A){spec=saved.spec;applySpecDefaults();if(saved.colors)state.colors={...DEFAULT_COLOURS,...saved.colors};if(typeof saved.tod==='number')tod=saved.tod;return;}
     }catch(e){}
+    if(templateDefault&&templateDefault.spec&&templateDefault.spec.runs&&templateDefault.spec.runs.A){
+      spec=structuredClone(templateDefault.spec);applySpecDefaults();
+      if(templateDefault.colors)state.colors={...DEFAULT_COLOURS,...templateDefault.colors};
+      if(typeof templateDefault.tod==='number')tod=templateDefault.tod;
+      return;
+    }
     spec=structuredClone(DEFAULT_SPEC);
   }
   function saveAll(){try{localStorage.setItem(SPEC_KEY,JSON.stringify({spec,colors:state.colors,tod}));}catch(e){}}
@@ -1118,7 +1147,7 @@
     const sl=document.createElement('div');sl.className='row';
     const exp=document.createElement('button');exp.className='btn';exp.textContent='\u2B07 Export JSON';exp.onclick=exportDesign;
     const imp=document.createElement('button');imp.className='btn';imp.textContent='\u2B06 Import JSON';imp.onclick=()=>fileInput.click();
-    const rst=document.createElement('button');rst.className='btn';rst.textContent='Reset design';rst.onclick=()=>{if(confirm('Reset the kitchen layout to default?')){spec=structuredClone(DEFAULT_SPEC);saveAll();renderDesign();rebuildKitchen(true);}};
+    const rst=document.createElement('button');rst.className='btn';rst.textContent='Reset design';rst.onclick=()=>{if(confirm('Reset the kitchen to the default template?')){const t=(templateDefault&&templateDefault.spec)?templateDefault:{spec:DEFAULT_SPEC};spec=structuredClone(t.spec);applySpecDefaults();if(t.colors){state.colors={...DEFAULT_COLOURS,...t.colors};SURFACES.forEach(s=>mats[s.key].color.set(state.colors[s.key]));}if(typeof t.tod==='number'){tod=t.tod;const ts=document.getElementById('timeOfDay');if(ts)ts.value=tod*100;applyTimeOfDay(tod);}saveAll();renderDesign();renderSurfaces();rebuildKitchen(true);}};
     sl.appendChild(exp);sl.appendChild(imp);sl.appendChild(rst);paneDesign.appendChild(sl);
     const note=document.createElement('p');note.className='note';note.textContent='Layout auto-saves in this browser. Export to keep or share a design file.';paneDesign.appendChild(note);
   }
@@ -1491,12 +1520,15 @@
   document.getElementById('collapse').onclick=()=>setCollapsed(false);
 
   /* ===== boot + loop ===== */
-  loadAll();
-  SURFACES.forEach(s=>mats[s.key].color.set(state.colors[s.key]));
-  applyTimeOfDay(tod);timeSlider.value=tod*100;
-  renderDesign();renderSurfaces();renderPresets();updateAB();syncPlanCustomer();
-  rebuildKitchen(true);
-  setTimeout(()=>document.getElementById('loader').classList.add('hide'),350);
+  (async function boot(){
+    templateDefault=await fetchTemplate();
+    loadAll();
+    SURFACES.forEach(s=>mats[s.key].color.set(state.colors[s.key]));
+    applyTimeOfDay(tod);timeSlider.value=tod*100;
+    renderDesign();renderSurfaces();renderPresets();updateAB();syncPlanCustomer();
+    rebuildKitchen(true);
+    setTimeout(()=>document.getElementById('loader').classList.add('hide'),350);
+  })();
   function render(){if(usePost&&composer)composer.render();else renderer.render(scene,camera);}
   function resize(){const w=sceneEl.clientWidth,h=sceneEl.clientHeight;renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();if(composer)composer.setSize(w,h);}
   window.addEventListener('resize',resize);

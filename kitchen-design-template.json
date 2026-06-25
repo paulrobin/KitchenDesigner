@@ -1,0 +1,159 @@
+{
+  "spec": {
+    "layout": "U",
+    "ceiling": 2.25,
+    "runs": {
+      "A": {
+        "wallUnits": true,
+        "units": [
+          {
+            "type": "gap",
+            "width": 1.5
+          },
+          {
+            "type": "drawers",
+            "width": 0.8
+          },
+          {
+            "type": "oven",
+            "width": 0.6,
+            "hobZones": 4,
+            "hobType": "gas"
+          },
+          {
+            "type": "door",
+            "width": 0.4,
+            "handle": "R"
+          }
+        ],
+        "wallCabs": [
+          {
+            "type": "gap",
+            "width": 1.5
+          },
+          {
+            "type": "door",
+            "width": 0.8
+          },
+          {
+            "type": "extractor",
+            "width": 0.6
+          },
+          {
+            "type": "door",
+            "width": 0.8
+          }
+        ]
+      },
+      "B": {
+        "wallUnits": false,
+        "units": [
+          {
+            "type": "gap",
+            "width": 0.7
+          },
+          {
+            "type": "larder",
+            "width": 0.6,
+            "handle": "L"
+          },
+          {
+            "type": "larder",
+            "width": 0.6
+          },
+          {
+            "type": "fridge",
+            "width": 0.6,
+            "integrated": true,
+            "handle": "R"
+          }
+        ],
+        "wallCabs": []
+      },
+      "C": {
+        "wallUnits": true,
+        "units": [
+          {
+            "type": "corner",
+            "width": 0.6
+          },
+          {
+            "type": "door",
+            "width": 0.8
+          },
+          {
+            "type": "sink",
+            "width": 0.6,
+            "sinkType": "inset"
+          },
+          {
+            "type": "dishwasher",
+            "width": 0.6,
+            "integrated": true
+          },
+          {
+            "type": "door",
+            "width": 0.5,
+            "handle": "L",
+            "integrated": false
+          }
+        ],
+        "wallCabs": [
+          {
+            "type": "gap",
+            "width": 2.4
+          },
+          {
+            "type": "door",
+            "width": 0.6
+          }
+        ]
+      }
+    },
+    "window": {
+      "enabled": true,
+      "wall": "right",
+      "centre": 1.35,
+      "width": 1.65,
+      "height": 0.95,
+      "sill": 1.15
+    },
+    "doorway": {
+      "enabled": true,
+      "wall": "back",
+      "centre": 0.55,
+      "width": 0.9,
+      "height": 2.04
+    },
+    "island": {
+      "enabled": false,
+      "length": 1.8,
+      "depth": 0.9,
+      "overhang": true
+    },
+    "worktopEndOverhang": 0.025,
+    "handleWidth": 0.125,
+    "endPanels": true,
+    "client": {
+      "name": "Paul Robinson",
+      "address": "25 sperrin Drive\nLurgan\nBT67 9EH"
+    },
+    "cornice": true,
+    "doorStyle": "shaker",
+    "handleStyle": "bar",
+    "worktopMaterial": "wood",
+    "worktopEdge": "square",
+    "floorMaterial": "tile"
+  },
+  "colors": {
+    "base": "#2E3D45",
+    "wall": "#F1E7CC",
+    "worktop": "#B07F49",
+    "walls": "#A9AC9C",
+    "floor": "#B3AC9C",
+    "handles": "#2A2C2A"
+  },
+  "tod": 0.5,
+  "app": "KitchenStudio",
+  "version": 3
+}
