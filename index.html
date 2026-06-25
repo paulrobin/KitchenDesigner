@@ -1359,9 +1359,10 @@
   propsBtn.onclick=()=>{showProps=!showProps;propsBtn.classList.toggle('on',showProps);propsBtn.innerHTML='\uD83C\uDF43 Styling: '+(showProps?'On':'Off');rebuildKitchen(false);};
   document.getElementById('recentre').onclick=()=>frameCamera();
   document.getElementById('snap').onclick=()=>{render();const a=document.createElement('a');a.href=renderer.domElement.toDataURL('image/png');a.download='my-kitchen.png';a.click();};
-  document.getElementById('hidePanel').onclick=()=>document.body.classList.add('collapsed');
-  document.getElementById('collapseBtn').onclick=()=>document.body.classList.add('collapsed');
-  document.getElementById('collapse').onclick=()=>document.body.classList.remove('collapsed');
+  const setCollapsed=(v)=>{document.body.classList.toggle('collapsed',v);requestAnimationFrame(()=>{resize();render();});};
+  document.getElementById('hidePanel').onclick=()=>setCollapsed(true);
+  document.getElementById('collapseBtn').onclick=()=>setCollapsed(true);
+  document.getElementById('collapse').onclick=()=>setCollapsed(false);
 
   /* ===== boot + loop ===== */
   loadAll();
