@@ -104,6 +104,11 @@ spec = {
   handleWidth: 0.13,                  // metres - global bar-handle length (default 130mm)
   endPanels: true,                    // 15mm finished panels on exposed run ends
   cornice: true,                      // cornice (top) + pelmet (bottom) mouldings on wall & tall cupboards
+  doorStyle: 'shaker',                // 'shaker' | 'slab' | 'beaded'
+  handleStyle: 'bar',                 // 'bar' | 'knob' | 'cup'
+  worktopMaterial: 'quartz',          // 'quartz' | 'granite' | 'laminate' | 'wood'
+  worktopEdge: 'square',              // 'square' | 'bevel' | 'bullnose'
+  floorMaterial: 'wood',              // 'wood' | 'tile' | 'stone' | 'vinyl' | 'concrete'
   runs: {
     // wallUnits = master on/off for the wall row; wallCabs = independent upper-cabinet list along the wall
     A: { wallUnits: true,  units: [ {type, width, handle?:'L'|'R'}, ... ], wallCabs: [ {type, width}, ... ] },  // back wall
@@ -124,6 +129,9 @@ filler panel, no door/handle, worktop over; placed where two runs meet), `fridge
 Appliance units (`dishwasher`, `washing`, `fridgeUC`, `fridge`, `americanFridge`) take an optional `integrated` flag —
 true = a cabinet panel front, false = a visible free-standing appliance (stainless / white goods). Default integrated,
 except `americanFridge` which defaults free-standing.
+`sink` units take optional `sinkType` (`inset` 1.5-bowl | `single` | `undermount` | `belfast` apron — Belfast replaces
+the worktop run with a ceramic top) and `tapStyle` (`mixer` | `swan` | `bridge`).
+Door/handle styles and worktop/floor finishes are global (above); they drive both the 3D model and the CAD elevations.
 
 **Auto-derived from the spec when building:**
 - Worktop segment over each base unit (not over `range`, tall units, or `gap`).
@@ -248,3 +256,7 @@ colours and lighting.
 - **Side-run corner ownership** — If the **first unit** of Run B or Run C is a `corner`, that side run now *claims* the corner: it extends to the back wall, Run A shifts clear, and the room widens by `BASE_DEPTH` (600 mm) on that side so the corner fits. Implemented via `cornerGeom()` (claims/offsets/room size), shared by `buildKitchen` (separate full-width back-wall frame; Run A frame gains an `sx` shift) and `planModel`/plan dims. Default behaviour (Run A owns the corners) is unchanged when no side corner is placed.- **Independent wall cupboards** — Wall (upper) cabinets are no longer slaved 1:1 to base units. Each run has its own editable **`wallCabs`** list (own widths/positions) with types **door / extractor / bridging / gap**, edited in a per-run "Wall cupboards" sub-editor under the base units. The base oven now keeps only the hob; extraction is an `extractor` wall unit. Existing designs migrate automatically (`migrateWallCabs()`: base door/drawers/dishwasher → door, oven/range → extractor, others → gap; runs with `wallUnits:false` get an empty list). Wall units render in 3D, in elevations (door/extractor/bridging) and as dashed overlays on the plan. Toggling a run's wall row on auto-seeds the list from the base units.
 - **Cornice & pelmet** — Wall cupboards have a proper **cornice** (top moulding) + **pelmet** (bottom moulding); **tall cupboards** now get a **cornice** too. Controlled by a single **Cornice & pelmet** toggle (`spec.cornice`, default on) in the Design tab — turn off for a plain/slab look. Reflected in 3D and elevations.
 - **Appliance options** — New **washing machine** type and three **fridge** types: under-counter (`fridgeUC`, base height), tall fridge-freezer (`fridge`), and wide **American fridge-freezer** (`americanFridge`). Each appliance (dishwasher, washing machine, all fridges) has an **Integrated / Free-standing** toggle (per-unit `integrated` flag, button on the unit row): integrated shows a cabinet panel; free-standing shows a visible appliance (stainless, or white goods with a porthole for the washer). Rendered in 3D, plan labels and elevations.
+- **Door & handle styles** — Global **door style** (`shaker` / `slab` / `beaded`) and **handle style** (`bar` / `knob` / `cup`) selectors in the Design tab. Door faces and handles dispatch on these everywhere (3D model + CAD elevations: shaker/beaded show an inset panel, beaded adds tongue-and-groove lines; knobs/cup pulls draw as a dot / arc). Existing designs default to shaker + bar.
+- **Worktop material & edge** — Global **worktop material** (`quartz` / `granite` / `laminate` / `wood`, driving roughness/clearcoat/texture) and **edge profile** (`square` / `bevel` / `bullnose`, driving the worktop edge radius). The chosen door + worktop are noted in the CAD title block.
+- **Floor finishes** — Global **floor finish** selector (`wood` / `tile` / `stone` / `vinyl` / `concrete`); tiles use a new procedural grout-grid texture. Floor colour stays user-controlled in the Styling tab.
+- **Sink detail** — Per-`sink` **sink type** (`inset` 1.5-bowl / `single` / `undermount` / `belfast`) and **tap style** (`mixer` / `swan` / `bridge`); Belfast renders an apron front with a ceramic top (no worktop over it) in 3D and elevation. Per-unit cycle buttons on the unit row; plan shows a BELFAST label.
