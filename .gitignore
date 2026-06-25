@@ -1,0 +1,7 @@
+# Local backup copies (history in git replaces these)
+index - Copy*.html
+
+# OS / editor cruft
+Thumbs.db
+.DS_Store
+*.tmp
