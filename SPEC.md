@@ -104,9 +104,10 @@ spec = {
   handleWidth: 0.13,                  // metres - global bar-handle length (default 130mm)
   endPanels: true,                    // 15mm finished panels on exposed run ends
   runs: {
-    A: { wallUnits: true,  units: [ {type, width, handle?:'L'|'R'}, ... ] },  // back wall
-    B: { wallUnits: false, units: [ ... ] },                 // left wall  (L, U)
-    C: { wallUnits: false, units: [ ... ] },                 // right wall (U)
+    // wallUnits = master on/off for the wall row; wallCabs = independent upper-cabinet list along the wall
+    A: { wallUnits: true,  units: [ {type, width, handle?:'L'|'R'}, ... ], wallCabs: [ {type, width}, ... ] },  // back wall
+    B: { wallUnits: false, units: [ ... ], wallCabs: [ ... ] },                 // left wall  (L, U)
+    C: { wallUnits: false, units: [ ... ], wallCabs: [ ... ] },                 // right wall (U)
   },
   window:  { enabled, wall:'back'|'left'|'right', centre, width, height, sill },
   doorway: { enabled, wall, centre, width, height },
@@ -115,7 +116,8 @@ spec = {
 ```
 
 **Unit types:** `door`, `drawers`, `sink`, `oven` (oven cabinet), `range` (range cooker),
-`dishwasher`, `gap` (open space — no cabinet/worktop/wall unit), `fridge` (tall), `larder` (tall),
+`dishwasher`, `gap` (open space — no cabinet/worktop/wall unit), `corner` (blank/dead corner —
+filler panel, no door/handle, worktop over; placed where two runs meet), `fridge` (tall), `larder` (tall),
 `ovenTower` (tall). Each unit has a `width` (m); `door`/`fridge`/`larder` units take an optional `handle: 'L'|'R'` (default `R`).
 
 **Auto-derived from the spec when building:**
@@ -237,3 +239,5 @@ colours and lighting.
 - **end panels at gaps** — End panels now also cap the exposed cabinet end wherever a run terminates at an internal `gap` unit (e.g. a run stopping short of a corner before a doorway), not only at a run's outer start/end. The worktop extends to overhang these gap-facing panels. Outer-end rule unchanged: panels appear on genuinely exposed ends; inside corners and wall joins get none.
 - **Plan tab** — New fourth tab producing scale CAD-style **SVG** drawings generated from the same `spec`: a top-down **floor plan** (poché walls, cabinet footprints, tall-unit hatching, appliance symbols, window double-line, doorway swing arc, island, full dimensioning — per-unit + run totals + overall room) and **front elevations** for each present run (plinth/carcass/worktop/wall units/tall units/appliance faces, openings, per-unit width + height dims). Greyscale style, title block + 1 m scale bar. Drawings render in a white "sheet" overlay over the 3D scene; controls (view toggle, export) live in the side panel. Export via **Print/PDF** (print CSS) and **PNG** (SVG serialised to canvas). Static (no click-to-edit). Sink unit reduced to a single door; under-cabinet LED z-position bug fixed; styling props default off.
 - **Plan refinements** — Left-wall elevation now mirrored to read as viewed from inside the room (front→back), the correct mirror of the right-wall elevation. Print forced to **A4 landscape** with the drawing scaled to fill the page. Title block expanded to a two-column block carrying **customer name + address** (new `spec.client` fields, edited in the Plan tab, autosaved and included in JSON export/import).
+- **Corner (blank/dead) unit** — New `corner` unit type for the spot where two runs meet: a plain filler (no door/handle) with worktop over it, instead of a door cabinet. Renders as a flat panel in 3D, a blank panel in elevations, and a distinct grey **DEAD CORNER** block on the plan. No wall cupboard is placed above it. Set the corner-owning unit (an end unit of Run A) to this type.
+- **Side-run corner ownership** — If the **first unit** of Run B or Run C is a `corner`, that side run now *claims* the corner: it extends to the back wall, Run A shifts clear, and the room widens by `BASE_DEPTH` (600 mm) on that side so the corner fits. Implemented via `cornerGeom()` (claims/offsets/room size), shared by `buildKitchen` (separate full-width back-wall frame; Run A frame gains an `sx` shift) and `planModel`/plan dims. Default behaviour (Run A owns the corners) is unchanged when no side corner is placed.- **Independent wall cupboards** — Wall (upper) cabinets are no longer slaved 1:1 to base units. Each run has its own editable **`wallCabs`** list (own widths/positions) with types **door / extractor / bridging / gap**, edited in a per-run "Wall cupboards" sub-editor under the base units. The base oven now keeps only the hob; extraction is an `extractor` wall unit. Existing designs migrate automatically (`migrateWallCabs()`: base door/drawers/dishwasher → door, oven/range → extractor, others → gap; runs with `wallUnits:false` get an empty list). Wall units render in 3D, in elevations (door/extractor/bridging) and as dashed overlays on the plan. Toggling a run's wall row on auto-seeds the list from the base units.

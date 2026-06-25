@@ -57,6 +57,7 @@
     background: var(--panel-2); color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; padding: 0; }
   .iconbtn:hover { color: var(--text); border-color: #51606f; }
   .note { font-size: 11px; color: var(--muted); margin: 4px 0 0; }
+  .wall-sub { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 12px 0 4px; border-top: 1px dashed var(--line); padding-top: 8px; }
 
   /* surfaces / picker */
   .surface { display: flex; align-items: center; gap: 10px; background: var(--panel-2); border: 1px solid var(--line);
@@ -693,14 +694,22 @@
       g.add(flatbox(width-0.1,0.03,0.02,matSteel,0,faceY+bodyH/2-0.05,front+0.03));
     } else if(type==='sink'){isSink=true;const f=shakerFace(width-2*REVEAL,bodyH-2*REVEAL,mats.base);f.position.set(0,faceY,front+0.012);g.add(f);
       barOn(g,hs*(width*0.5-0.06),faceY,hw,false);
+    } else if(type==='corner'){ /* blank dead-corner filler: flat panel, no door, no handle */
+      g.add(flatbox(width-2*REVEAL,bodyH-2*REVEAL,0.02,mats.base,0,faceY,front+0.01));
     } else {const f=shakerFace(width-2*REVEAL,bodyH-2*REVEAL,mats.base);f.position.set(0,faceY,front+0.012);g.add(f);
       barOn(g,hs*(width*0.5-0.06),faceY,hw,false);}
-    return{group:g,worktop:type!=='range',tall:false,isSink,isOven,isRange,kind:type};
+    return{group:g,worktop:type!=='range',tall:false,isSink,isOven,isRange,isCorner:type==='corner',kind:type};
   }
-  function makeWallCab(width,handleSide){const g=new THREE.Group(),h=WALL_Y1-WALL_Y0,front=WALL_DEPTH/2,cy=WALL_Y0+h/2,hw=(spec.handleWidth==null?0.13:spec.handleWidth);
+  function makeWallUnit(type,width){const g=new THREE.Group(),h=WALL_Y1-WALL_Y0,front=WALL_DEPTH/2,cy=WALL_Y0+h/2,hw=(spec.handleWidth==null?0.13:spec.handleWidth);
+    if(type==='extractor')return makeExtractor();
+    if(type==='bridging'){const bh=0.36,bcy=WALL_Y1-bh/2;g.add(flatbox(width,bh,WALL_DEPTH,mats.wall,0,bcy,0));
+      const doors=width>0.7?2:1,dw=width/doors;
+      for(let i=0;i<doors;i++){const cx=-width/2+dw*(i+0.5);const f=shakerFace(dw-2*REVEAL,bh-2*REVEAL,mats.wall);f.position.set(cx,bcy,front+0.012);g.add(f);
+        const hb=barHandle(Math.min(hw,dw-0.1),true);hb.position.set(cx,bcy-bh/2+0.05,front+0.012);g.add(hb);}
+      g.add(rbox(width+0.03,0.05,WALL_DEPTH+0.03,mats.wall,0,WALL_Y1+0.02,0.01,0.01));return g;}
     g.add(flatbox(width,h,WALL_DEPTH,mats.wall,0,cy,0));const doors=width>0.65?2:1,dw=width/doors;
     for(let i=0;i<doors;i++){const cx=-width/2+dw*(i+0.5);const f=shakerFace(dw-2*REVEAL,h-2*REVEAL,mats.wall);f.position.set(cx,cy,front+0.012);g.add(f);
-      const hside=doors===1?(handleSide==='L'?-1:1):(i===doors-1?-1:1);
+      const hside=doors===1?-1:(i===doors-1?-1:1);
       const hb=barHandle(hw,false);hb.position.set(cx+hside*(dw/2-0.05),cy-h/2+0.16,front+0.012);g.add(hb);}
     g.add(rbox(width+0.03,0.05,WALL_DEPTH+0.03,mats.wall,0,WALL_Y1+0.02,0.01,0.01));
     g.add(rbox(width+0.02,0.04,WALL_DEPTH+0.02,mats.wall,0,WALL_Y0-0.02,0.02,0.008));
@@ -723,13 +732,14 @@
 
   /* ===== spec model ===== */
   const SPEC_KEY='kds_spec_v1';
-  const UNIT_TYPES=[['door','Door'],['drawers','Drawers'],['sink','Sink'],['oven','Oven cabinet'],['range','Range cooker'],['dishwasher','Dishwasher'],['gap','Gap / open space'],['fridge','Fridge (tall)'],['larder','Larder (tall)'],['ovenTower','Oven tower (tall)']];
+  const UNIT_TYPES=[['door','Door'],['drawers','Drawers'],['sink','Sink'],['oven','Oven cabinet'],['range','Range cooker'],['dishwasher','Dishwasher'],['gap','Gap / open space'],['corner','Corner (blank/dead)'],['fridge','Fridge (tall)'],['larder','Larder (tall)'],['ovenTower','Oven tower (tall)']];
+  const WALL_CAB_TYPES=[['door','Door'],['extractor','Extractor'],['bridging','Bridging unit'],['gap','Gap / none']];
   const DEFAULT_SPEC={
     layout:'L',ceiling:2.6,worktopEndOverhang:0.01,handleWidth:0.13,endPanels:true,
     runs:{
-      A:{wallUnits:true,units:[{type:'door',width:0.6},{type:'drawers',width:0.6},{type:'oven',width:0.6},{type:'drawers',width:0.6},{type:'door',width:0.8},{type:'door',width:0.8}]},
-      B:{wallUnits:false,units:[{type:'door',width:0.6},{type:'drawers',width:0.6},{type:'sink',width:0.6},{type:'door',width:0.8},{type:'door',width:0.8}]},
-      C:{wallUnits:false,units:[{type:'door',width:0.6},{type:'larder',width:0.6},{type:'door',width:0.6}]},
+      A:{wallUnits:true,units:[{type:'door',width:0.6},{type:'drawers',width:0.6},{type:'oven',width:0.6},{type:'drawers',width:0.6},{type:'door',width:0.8},{type:'door',width:0.8}],wallCabs:[{type:'door',width:0.6},{type:'door',width:0.6},{type:'extractor',width:0.6},{type:'door',width:0.6},{type:'door',width:0.8},{type:'door',width:0.8}]},
+      B:{wallUnits:false,units:[{type:'door',width:0.6},{type:'drawers',width:0.6},{type:'sink',width:0.6},{type:'door',width:0.8},{type:'door',width:0.8}],wallCabs:[]},
+      C:{wallUnits:false,units:[{type:'door',width:0.6},{type:'larder',width:0.6},{type:'door',width:0.6}],wallCabs:[]},
     },
     window:{enabled:true,wall:'left',centre:2.1,width:1.2,height:0.9,sill:1.1},
     doorway:{enabled:false,wall:'right',centre:1.2,width:0.9,height:2.04},
@@ -739,13 +749,29 @@
   let spec, state={colors:{...DEFAULT_COLOURS}};
   function loadAll(){
     try{const saved=JSON.parse(localStorage.getItem(SPEC_KEY));
-      if(saved&&saved.spec&&saved.spec.runs&&saved.spec.runs.A){spec=saved.spec;if(spec.worktopEndOverhang==null)spec.worktopEndOverhang=0.01;if(spec.handleWidth==null)spec.handleWidth=0.13;if(!spec.client)spec.client={name:'',address:''};if(saved.colors)state.colors={...DEFAULT_COLOURS,...saved.colors};if(typeof saved.tod==='number')tod=saved.tod;return;}
+      if(saved&&saved.spec&&saved.spec.runs&&saved.spec.runs.A){spec=saved.spec;if(spec.worktopEndOverhang==null)spec.worktopEndOverhang=0.01;if(spec.handleWidth==null)spec.handleWidth=0.13;if(!spec.client)spec.client={name:'',address:''};migrateWallCabs();if(saved.colors)state.colors={...DEFAULT_COLOURS,...saved.colors};if(typeof saved.tod==='number')tod=saved.tod;return;}
     }catch(e){}
     spec=structuredClone(DEFAULT_SPEC);
   }
   function saveAll(){try{localStorage.setItem(SPEC_KEY,JSON.stringify({spec,colors:state.colors,tod}));}catch(e){}}
   const sumW=(run)=>run.units.reduce((s,u)=>s+(+u.width||0),0);
+  // Independent wall-cupboard list per run; migrate old auto-on-base behaviour into an editable list.
+  function defaultWallCabs(run){return run.units.map(u=>{const t=u.type,w=+u.width||0.6;if(t==='oven'||t==='range')return{type:'extractor',width:w};if(t==='door'||t==='drawers'||t==='dishwasher')return{type:'door',width:w};return{type:'gap',width:w};});}
+  function migrateWallCabs(){['A','B','C'].forEach(k=>{const r=spec.runs&&spec.runs[k];if(r&&!Array.isArray(r.wallCabs))r.wallCabs=r.wallUnits?defaultWallCabs(r):[];});}
   const wallPresent=(wall)=>wall==='back'||(wall==='left'&&spec.layout!=='single')||(wall==='right'&&spec.layout==='U');
+  // Corner ownership: a 'corner' unit at the back-wall end (first unit) of Run B/C makes that run
+  // claim the corner (extend to the back wall); Run A shifts and the room widens to make room.
+  function cornerGeom(){
+    const A=spec.runs.A,B=spec.runs.B,C=spec.runs.C;
+    const lenA=sumW(A),lenB=spec.layout!=='single'?sumW(B):0,lenC=spec.layout==='U'?sumW(C):0;
+    const claimB=spec.layout!=='single'&&!!(B.units[0]&&B.units[0].type==='corner');
+    const claimC=spec.layout==='U'&&!!(C.units[0]&&C.units[0].type==='corner');
+    const axShift=claimB?BASE_DEPTH:0,startB=claimB?0:BASE_DEPTH,startC=claimC?0:BASE_DEPTH;
+    let rW=Math.max(axShift+lenA+(claimC?BASE_DEPTH:0),1.8);
+    let rD=Math.max(startB+lenB,startC+lenC,2.6);
+    if(spec.layout==='single')rD=Math.max(rD,3.0);
+    return{lenA,lenB,lenC,claimB,claimC,axShift,startB,startC,roomW:rW,roomD:rD};
+  }
 
   /* ===== build the kitchen ===== */
   const kitchenGroup=new THREE.Group();scene.add(kitchenGroup);
@@ -757,13 +783,13 @@
   function placeGroup(f,along,across,group,y){const p=framePoint(f,along,across);group.rotation.y=f.faceRot;group.position.set(p.x,y||0,p.z);kitchenGroup.add(group);}
   function placeWallBox(f,alongC,yC,sAlong,sY){const p=framePoint(f,alongC,-WALL_T/2);
     const sx=Math.abs(f.du)*sAlong+Math.abs(f.nx)*WALL_T,sz=Math.abs(f.dv)*sAlong+Math.abs(f.nz)*WALL_T;kitchenGroup.add(flatbox(sx,sY,sz,mats.walls,p.x,yC,p.z));}
-  function frames(){return{
-    A:{sx:0,sz:0,du:1,dv:0,nx:0,nz:1,faceRot:0,start:0,wall:'back'},
-    B:{sx:0,sz:0,du:0,dv:1,nx:1,nz:0,faceRot:Math.PI/2,start:BASE_DEPTH,wall:'left'},
-    C:{sx:roomW,sz:0,du:0,dv:1,nx:-1,nz:0,faceRot:-Math.PI/2,start:BASE_DEPTH,wall:'right'},
+  function frames(ax,sB,sC){return{
+    A:{sx:ax||0,sz:0,du:1,dv:0,nx:0,nz:1,faceRot:0,start:0,wall:'back'},
+    B:{sx:0,sz:0,du:0,dv:1,nx:1,nz:0,faceRot:Math.PI/2,start:(sB==null?BASE_DEPTH:sB),wall:'left'},
+    C:{sx:roomW,sz:0,du:0,dv:1,nx:-1,nz:0,faceRot:-Math.PI/2,start:(sC==null?BASE_DEPTH:sC),wall:'right'},
   };}
   function overlapsOpening(wall,a0,a1){const t=(o)=>o&&o.enabled&&o.wall===wall&&a0<o.centre+o.width/2&&a1>o.centre-o.width/2;return t(spec.window)||t(spec.doorway);}
-  function buildRun(run,f){let along=f.start;const oh=(spec.worktopEndOverhang==null?0.01:spec.worktopEndOverhang);
+  function buildRun(run,f){let along=f.start;const wo=(f.du?f.sx:f.sz);const oh=(spec.worktopEndOverhang==null?0.01:spec.worktopEndOverhang);
     const noWt=t=>t==='range'||t==='fridge'||t==='larder'||t==='ovenTower'||t==='gap';
     let firstWt=-1,lastWt=-1;run.units.forEach((u,i)=>{if(!noWt(u.type)){if(firstWt<0)firstWt=i;lastWt=i;}});
     const lastIdx=run.units.length-1,total=sumW(run),ep=(spec.endPanels!==false);
@@ -777,9 +803,9 @@
     run.units.forEach((spec_u,idx)=>{const w=+spec_u.width||0.6;const u=makeUnit(spec_u.type,w,spec_u.handle||'R');placeGroup(f,along+w/2,BASE_DEPTH/2,u.group,0);
       if(u.worktop){let sx=(idx===firstWt?oh+((firstWt===0&&startExp&&ep)?0.015:0):0.006),ex=(idx===lastWt?oh+((lastWt===lastIdx&&endExp&&ep)?0.015:0):0.006);if(ep&&run.units[idx-1]&&run.units[idx-1].type==='gap')sx=Math.max(sx,oh+0.015);if(ep&&run.units[idx+1]&&run.units[idx+1].type==='gap')ex=Math.max(ex,oh+0.015);const a0=along-sx,a1=along+w+ex;placeBox(f,(a0+a1)/2,BASE_DEPTH/2+0.02,COUNTER_H-WT_TH/2,a1-a0,BASE_DEPTH+0.05,WT_TH,mats.worktop,true,0.012);}
       if(u.isSink){const sg=makeSinkFixtures();placeGroup(f,along+w/2,BASE_DEPTH/2,sg,0);const p=framePoint(f,along+w/2,BASE_DEPTH/2);anchors.sink={x:p.x,z:p.z};}
-      if(u.isOven||u.isRange){if(!u.isRange){const hg=makeHob();placeGroup(f,along+w/2,BASE_DEPTH/2,hg,0);}const eg=makeExtractor();placeGroup(f,along+w/2,WALL_DEPTH/2,eg,0);const p=framePoint(f,along+w/2,BASE_DEPTH/2);anchors.hob={x:p.x,z:p.z};}
-      else if(run.wallUnits&&!u.tall&&!u.isSink&&!u.isGap){if(!overlapsOpening(f.wall,along,along+w)){const wc=makeWallCab(w,spec_u.handle||'R');placeGroup(f,along+w/2,WALL_DEPTH/2,wc,0);}}
-      along+=w;});}
+      if(u.isOven||u.isRange){if(!u.isRange){const hg=makeHob();placeGroup(f,along+w/2,BASE_DEPTH/2,hg,0);}const p=framePoint(f,along+w/2,BASE_DEPTH/2);anchors.hob={x:p.x,z:p.z};}
+      along+=w;});
+    if(run.wallUnits!==false&&Array.isArray(run.wallCabs)){let wa=f.start;run.wallCabs.forEach(wc=>{const ww=+wc.width||0.6;if(wc.type!=='gap'){const wg=makeWallUnit(wc.type,ww);placeGroup(f,wa+ww/2,WALL_DEPTH/2,wg,0);}wa+=ww;});}}
   function buildWall(wall,f,length){const ceil=spec.ceiling,ops=[];
     if(spec.window.enabled&&spec.window.wall===wall)ops.push({c:spec.window.centre,w:spec.window.width,y0:spec.window.sill,y1:spec.window.sill+spec.window.height});
     if(spec.doorway.enabled&&spec.doorway.wall===wall)ops.push({c:spec.doorway.centre,w:spec.doorway.width,y0:0,y1:spec.doorway.height});
@@ -826,12 +852,12 @@
     while(kitchenGroup.children.length){const c=kitchenGroup.children.pop();c.traverse(o=>{if(o.geometry)o.geometry.dispose();});}
     anchors={};
     const A=spec.runs.A,B=spec.runs.B,C=spec.runs.C;
-    const lenA=sumW(A),lenB=spec.layout!=='single'?sumW(B):0,lenC=spec.layout==='U'?sumW(C):0;
-    roomW=Math.max(lenA,1.8);roomD=Math.max(BASE_DEPTH+lenB,BASE_DEPTH+lenC,2.6);
-    if(spec.layout==='single')roomD=Math.max(roomD,3.0);
-    const F=frames();const wallFrame={back:F.A,left:F.B,right:F.C};
+    const G=cornerGeom();roomW=G.roomW;roomD=G.roomD;
+    const F=frames(G.axShift,G.startB,G.startC);
+    const FbackWall={sx:0,sz:0,du:1,dv:0,nx:0,nz:1,faceRot:0,start:0,wall:'back'};
+    const wallFrame={back:FbackWall,left:F.B,right:F.C};
     kitchenGroup.add((()=>{const m=flatbox(roomW+0.3,0.04,roomD+0.3,mats.floor,roomW/2,-0.02,roomD/2);m.receiveShadow=true;return m;})());
-    buildWall('back',F.A,roomW);
+    buildWall('back',FbackWall,roomW);
     if(spec.layout!=='single')buildWall('left',F.B,roomD);
     if(spec.layout==='U')buildWall('right',F.C,roomD);
     buildRun(A,F.A);
@@ -934,7 +960,7 @@
     runKeys.forEach(rk=>{const run=spec.runs[rk];const box=document.createElement('div');box.className='runbox';
       const head=document.createElement('div');head.className='runhead';const t=document.createElement('h3');t.textContent=runNames[rk]+'  ('+sumW(run).toFixed(2)+' m)';head.appendChild(t);
       const wu=document.createElement('button');wu.className='iconbtn';wu.title='Wall cupboards above';wu.style.width='auto';wu.style.padding='0 8px';wu.textContent=run.wallUnits?'Wall units \u2713':'Wall units';if(run.wallUnits)wu.style.color='var(--text)';
-      wu.onclick=()=>{run.wallUnits=!run.wallUnits;saveAll();renderDesign();rebuildKitchen(false);};head.appendChild(wu);box.appendChild(head);
+      wu.onclick=()=>{run.wallUnits=!run.wallUnits;if(run.wallUnits&&(!Array.isArray(run.wallCabs)||!run.wallCabs.length))run.wallCabs=defaultWallCabs(run);saveAll();renderDesign();rebuildKitchen(false);};head.appendChild(wu);box.appendChild(head);
       run.units.forEach((u,i)=>{const row=document.createElement('div');row.className='unit-row';
         row.appendChild(selectInput(u.type,UNIT_TYPES,(v)=>{u.type=v;saveAll();renderDesign();rebuildKitchen(false);}));
         const wi=document.createElement('input');wi.type='number';wi.value=u.width;wi.min=0.3;wi.max=1.2;wi.step=0.05;wi.oninput=()=>{u.width=parseFloat(wi.value)||0.6;saveAll();rebuildKitchen(false);t.textContent=runNames[rk]+'  ('+sumW(run).toFixed(2)+' m)';};row.appendChild(wi);
@@ -944,6 +970,17 @@
         const rm=document.createElement('button');rm.className='iconbtn';rm.textContent='\u2715';rm.onclick=()=>{run.units.splice(i,1);saveAll();renderDesign();rebuildKitchen(false);};row.appendChild(rm);
         box.appendChild(row);});
       const add=document.createElement('button');add.className='btn';add.style.marginTop='6px';add.textContent='+ Add unit';add.onclick=()=>{run.units.push({type:'door',width:0.6});saveAll();renderDesign();rebuildKitchen(false);};box.appendChild(add);
+      if(run.wallUnits){if(!Array.isArray(run.wallCabs))run.wallCabs=[];
+        const wch=document.createElement('div');wch.className='wall-sub';wch.textContent='Wall cupboards (along the wall)';box.appendChild(wch);
+        run.wallCabs.forEach((wc,i)=>{const row=document.createElement('div');row.className='unit-row';
+          row.appendChild(selectInput(wc.type,WALL_CAB_TYPES,(v)=>{wc.type=v;saveAll();rebuildKitchen(false);}));
+          const wi=document.createElement('input');wi.type='number';wi.value=wc.width;wi.min=0.3;wi.max=1.2;wi.step=0.05;wi.oninput=()=>{wc.width=parseFloat(wi.value)||0.6;saveAll();rebuildKitchen(false);};row.appendChild(wi);
+          const up=document.createElement('button');up.className='iconbtn';up.textContent='\u2191';up.onclick=()=>{if(i>0){run.wallCabs.splice(i-1,0,run.wallCabs.splice(i,1)[0]);saveAll();renderDesign();rebuildKitchen(false);}};row.appendChild(up);
+          const dn=document.createElement('button');dn.className='iconbtn';dn.textContent='\u2193';dn.onclick=()=>{if(i<run.wallCabs.length-1){run.wallCabs.splice(i+1,0,run.wallCabs.splice(i,1)[0]);saveAll();renderDesign();rebuildKitchen(false);}};row.appendChild(dn);
+          const rm=document.createElement('button');rm.className='iconbtn';rm.textContent='\u2715';rm.onclick=()=>{run.wallCabs.splice(i,1);saveAll();renderDesign();rebuildKitchen(false);};row.appendChild(rm);
+          box.appendChild(row);});
+        const addw=document.createElement('button');addw.className='btn';addw.style.marginTop='6px';addw.textContent='+ Add wall cupboard';addw.onclick=()=>{run.wallCabs.push({type:'door',width:0.6});saveAll();renderDesign();rebuildKitchen(false);};box.appendChild(addw);
+      }
       paneDesign.appendChild(box);});
     // window
     const wh=document.createElement('h2');wh.textContent='Window';paneDesign.appendChild(wh);
@@ -985,7 +1022,7 @@
   function rowWrap(el){const r=document.createElement('div');r.className='row';r.appendChild(el);return r;}
   function presentWalls(){const w=[['back','Back wall']];if(spec.layout!=='single')w.push(['left','Left wall']);if(spec.layout==='U')w.push(['right','Right wall']);return w;}
   function ensureRuns(){if(!spec.runs.B)spec.runs.B=structuredClone(DEFAULT_SPEC.runs.B);if(!spec.runs.C)spec.runs.C=structuredClone(DEFAULT_SPEC.runs.C);
-    if(!spec.client)spec.client={name:'',address:''};
+    if(!spec.client)spec.client={name:'',address:''};migrateWallCabs();
     if(spec.window.enabled&&!wallPresent(spec.window.wall))spec.window.wall='back';
     if(spec.doorway.enabled&&!wallPresent(spec.doorway.wall))spec.doorway.wall='back';}
 
@@ -1014,6 +1051,8 @@
     .cab{fill:#ffffff;stroke:#141414;stroke-width:14;}
     .tall{fill:url(#hatch);stroke:#141414;stroke-width:14;}
     .gap{fill:#f1f1ef;stroke:#9a9a9a;stroke-width:9;stroke-dasharray:36 26;}
+    .dead{fill:#b4b4b4;stroke:#141414;stroke-width:14;}
+    .wallcab{fill:none;stroke:#7a7a7a;stroke-width:7;stroke-dasharray:30 18;}
     .appl{fill:#f7f7f7;stroke:#141414;stroke-width:12;}
     .div{stroke:#141414;stroke-width:9;fill:none;}
     .sym{fill:none;stroke:#141414;stroke-width:9;}
@@ -1057,15 +1096,14 @@
   function wallName(w){return w==='back'?'back wall':w==='left'?'left wall':'right wall';}
   function openPresent(w){return w==='back'||(w==='left'&&spec.layout!=='single')||(w==='right'&&spec.layout==='U');}
   function planModel(){
-    const A=spec.runs.A,B=spec.runs.B,C=spec.runs.C;
-    const lenA=sumW(A),lenB=spec.layout!=='single'?sumW(B):0,lenC=spec.layout==='U'?sumW(C):0;
-    let rW=Math.max(lenA,1.8),rD=Math.max(BASE_DEPTH+lenB,BASE_DEPTH+lenC,2.6);
-    if(spec.layout==='single')rD=Math.max(rD,3.0);
-    const mk=(run,wall,start,len)=>{let a=start;const units=run.units.map(u=>{const w=+u.width||0.6;const o={type:u.type,width:w,a0:a,a1:a+w,handle:u.handle||'R'};a+=w;return o;});return{key:wall==='back'?'A':wall==='left'?'B':'C',wall,start,len,wallUnits:!!run.wallUnits,units};};
-    const runs=[mk(A,'back',0,lenA)];
-    if(spec.layout!=='single')runs.push(mk(B,'left',BASE_DEPTH,lenB));
-    if(spec.layout==='U')runs.push(mk(C,'right',BASE_DEPTH,lenC));
-    return{roomW:rW,roomD:rD,runs};
+    const A=spec.runs.A,B=spec.runs.B,C=spec.runs.C,G=cornerGeom();
+    const mk=(run,wall,start,len)=>{let a=start;const units=run.units.map(u=>{const w=+u.width||0.6;const o={type:u.type,width:w,a0:a,a1:a+w,handle:u.handle||'R'};a+=w;return o;});
+      let wa=start;const wallCabs=(run.wallUnits!==false&&Array.isArray(run.wallCabs))?run.wallCabs.map(c=>{const w=+c.width||0.6;const o={type:c.type,width:w,a0:wa,a1:wa+w};wa+=w;return o;}):[];
+      return{key:wall==='back'?'A':wall==='left'?'B':'C',wall,start,len,wallUnits:!!run.wallUnits,units,wallCabs};};
+    const runs=[mk(A,'back',G.axShift,G.lenA)];
+    if(spec.layout!=='single')runs.push(mk(B,'left',G.startB,G.lenB));
+    if(spec.layout==='U')runs.push(mk(C,'right',G.startC,G.lenC));
+    return{roomW:G.roomW,roomD:G.roomD,runs};
   }
   function fpRect(wall,a0,a1,depthM,W){const d=depthM*MM;
     if(wall==='back')return{x:a0,y:0,w:a1-a0,h:d};
@@ -1124,8 +1162,13 @@
   function drawPlanRun(g,run,W){
     run.units.forEach(u=>{const r=fpRect(run.wall,u.a0*MM,u.a1*MM,isTall(u.type)?TALL_DEPTH:BASE_DEPTH,W);
       if(u.type==='gap'){g.appendChild(sN('rect',{x:RND(r.x),y:RND(r.y),width:RND(r.w),height:RND(r.h),class:'gap'}));planLabel(g,r,'OPEN');return;}
+      if(u.type==='corner'){g.appendChild(sN('rect',{x:RND(r.x),y:RND(r.y),width:RND(r.w),height:RND(r.h),class:'dead'}));planLabel(g,r,'DEAD CORNER');return;}
       g.appendChild(sN('rect',{x:RND(r.x),y:RND(r.y),width:RND(r.w),height:RND(r.h),class:isTall(u.type)?'tall':'cab'}));
       drawPlanSymbol(g,run.wall,u,r);});
+  }
+  function drawPlanWallCabs(g,run,W){
+    if(!run.wallCabs)return;
+    run.wallCabs.forEach(wc=>{if(wc.type==='gap')return;const r=fpRect(run.wall,wc.a0*MM,wc.a1*MM,WALL_DEPTH,W);g.appendChild(sN('rect',{x:RND(r.x),y:RND(r.y),width:RND(r.w),height:RND(r.h),class:'wallcab'}));});
   }
   function drawPlanIsland(g,M){
     const L=spec.island.length*MM,D=spec.island.depth*MM,W=M.roomW*MM;
@@ -1139,7 +1182,7 @@
   function drawPlanDims(g,M,W,D){
     const A=M.runs.find(r=>r.key==='A');
     A.units.forEach(u=>hDim(g,u.a0*MM,u.a1*MM,-300,''+RND(u.width*MM)));
-    hDim(g,0,A.len*MM,-620,'RUN A  '+RND(A.len*MM));
+    hDim(g,A.start*MM,(A.start+A.len)*MM,-620,'RUN A  '+RND(A.len*MM));
     hDim(g,0,W,-960,'OVERALL  '+RND(W));
     const B=M.runs.find(r=>r.key==='B');
     if(B){B.units.forEach(u=>vDim(g,u.a0*MM,u.a1*MM,-300,''+RND(u.width*MM),true));vDim(g,B.start*MM,(B.start+B.len)*MM,-620,'RUN B '+RND(B.len*MM),true);}
@@ -1175,6 +1218,7 @@
     drawPlanWalls(g,M,W,D);
     drawPlanOpenings(g,M,W,D);
     M.runs.forEach(r=>drawPlanRun(g,r,W));
+    M.runs.forEach(r=>drawPlanWallCabs(g,r,W));
     if(spec.island.enabled)drawPlanIsland(g,M);
     drawPlanDims(g,M,W,D);
     drawTitleBlock(g,-ml+90,W+mr-90,D+330,'KITCHEN PLAN \u2014 '+layoutName(),'Overall '+M.roomW.toFixed(2)+' \u00d7 '+M.roomD.toFixed(2)+' m');
@@ -1212,17 +1256,21 @@
     } else if(u.type==='dishwasher'){facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);g.appendChild(sText(T.EX(x0+w/2),EY((PLINTH_H+DOOR_TOP)/2)+28,'DW','labs',null,null,'middle'));
     } else if(u.type==='sink'){facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);handleV(g,x0+w/2+hs*(w/2-70),DOOR_TOP-0.28,DOOR_TOP-0.06,EY,T);
       const tx=RND(T.EX(x0+w/2)),tx2=RND(T.EX(x0+w/2+0.14*MM));g.appendChild(sN('path',{d:`M ${tx} ${RND(EY(COUNTER_H))} C ${tx} ${RND(EY(COUNTER_H+0.26))} ${tx2} ${RND(EY(COUNTER_H+0.26))} ${tx2} ${RND(EY(COUNTER_H+0.1))}`,class:'sym'}));
+    } else if(u.type==='corner'){eRect(g,x0,w,EY,DOOR_TOP,(DOOR_TOP-PLINTH_H)*MM,'cab',T);g.appendChild(sText(T.EX(x0+w/2),EY((PLINTH_H+DOOR_TOP)/2)+30,'CORNER','labs',null,null,'middle'));
     } else {facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);handleV(g,x0+w/2+hs*(w/2-70),DOOR_TOP-0.30,DOOR_TOP-0.06,EY,T);}
     if(u.type!=='range')eRect(g,x0,w,EY,COUNTER_H,WT_TH*MM,'cab',T);
   }
-  function drawElevWallCab(g,run,u,EY,T){
-    if(!run.wallUnits||isTall(u.type)||u.type==='sink'||u.type==='gap'||u.type==='oven'||u.type==='range')return;
-    if(overlapsOpening(run.wall,u.a0,u.a1))return;
-    const xs=elevUnitX(run,u),x0=xs[0],x1=xs[1],w=x1-x0;
+  function drawElevWallCabUnit(g,run,wc,EY,T){
+    if(wc.type==='gap')return;
+    const x0=(wc.a0-run.start)*MM,x1=(wc.a1-run.start)*MM,w=x1-x0;
+    if(wc.type==='extractor'){
+      eRect(g,x0,w,EY,WALL_Y0+0.12,0.14*MM,'appl',T);
+      const chW=w*0.42,chX=x0+(w-chW)/2;eRect(g,chX,chW,EY,WALL_Y1,(WALL_Y1-WALL_Y0-0.12)*MM,'appl',T);
+      g.appendChild(sText(T.EX(x0+w/2),EY(WALL_Y0+0.04),'EXTRACT','labs',null,null,'middle'));return;}
+    if(wc.type==='bridging'){const yb=WALL_Y1-0.36;eRect(g,x0,w,EY,WALL_Y1,0.36*MM,'cab',T);facePanel(g,x0,x1,yb,WALL_Y1,EY,T);return;}
     eRect(g,x0,w,EY,WALL_Y1,(WALL_Y1-WALL_Y0)*MM,'cab',T);
-    const doors=u.width>0.65?2:1,dw=w/doors;
-    for(let i=0;i<doors;i++){facePanel(g,x0+dw*i,x0+dw*(i+1),WALL_Y0,WALL_Y1,EY,T);
-      const hs=(doors===1?(u.handle==='L'?-1:1):(i===doors-1?-1:1)),xc=x0+dw*i+dw/2+hs*(dw/2-60);handleV(g,xc,WALL_Y0+0.08,WALL_Y0+0.30,EY,T);}
+    const doors=wc.width>0.65?2:1,dw=w/doors;
+    for(let i=0;i<doors;i++){facePanel(g,x0+dw*i,x0+dw*(i+1),WALL_Y0,WALL_Y1,EY,T);const hs=(doors===1?-1:(i===doors-1?-1:1)),xc=x0+dw*i+dw/2+hs*(dw/2-60);handleV(g,xc,WALL_Y0+0.08,WALL_Y0+0.30,EY,T);}
     g.appendChild(sN('line',{x1:RND(T.EX(x0+30)),y1:RND(EY(WALL_Y0)+18),x2:RND(T.EX(x1-30)),y2:RND(EY(WALL_Y0)+18),class:'wt'}));
   }
   function drawElevOpenings(g,run,EY,len,T){
@@ -1254,7 +1302,7 @@
     g.appendChild(sN('line',{x1:RND(-60),y1:RND(EY(0)),x2:RND(len+60),y2:RND(EY(0)),class:'ln'}));
     drawElevOpenings(g,run,EY,len,T);
     run.units.forEach(u=>drawElevUnit(g,run,u,EY,T));
-    run.units.forEach(u=>drawElevWallCab(g,run,u,EY,T));
+    run.wallCabs.forEach(wc=>drawElevWallCabUnit(g,run,wc,EY,T));
     drawElevDims(g,run,EY,len,ceilM,T);
     drawTitleBlock(g,-ml+90,len+mr-90,ceil+780,'ELEVATION \u2014 RUN '+run.key,wallName(run.wall)+' (viewed from room)  \u00b7  length '+run.len.toFixed(2)+' m  \u00b7  ceiling '+ceilM.toFixed(2)+' m');
     return svg;
