@@ -1093,7 +1093,7 @@
         const wch=document.createElement('div');wch.className='wall-sub';wch.textContent='Wall cupboards (along the wall)';box.appendChild(wch);
         run.wallCabs.forEach((wc,i)=>{const row=document.createElement('div');row.className='unit-row';
           row.appendChild(selectInput(wc.type,WALL_CAB_TYPES,(v)=>{wc.type=v;saveAll();rebuildKitchen(false);}));
-          const wi=document.createElement('input');wi.type='number';wi.value=wc.width;wi.min=0.3;wi.max=1.2;wi.step=0.05;wi.oninput=()=>{wc.width=parseFloat(wi.value)||0.6;saveAll();rebuildKitchen(false);};row.appendChild(wi);
+          const wi=document.createElement('input');wi.type='number';wi.value=wc.width;wi.min=0.3;if(wc.type!=='gap')wi.max=1.2;wi.step=0.05;wi.oninput=()=>{wc.width=parseFloat(wi.value)||0.6;saveAll();rebuildKitchen(false);};row.appendChild(wi);
           const up=document.createElement('button');up.className='iconbtn';up.textContent='\u2191';up.onclick=()=>{if(i>0){run.wallCabs.splice(i-1,0,run.wallCabs.splice(i,1)[0]);saveAll();renderDesign();rebuildKitchen(false);}};row.appendChild(up);
           const dn=document.createElement('button');dn.className='iconbtn';dn.textContent='\u2193';dn.onclick=()=>{if(i<run.wallCabs.length-1){run.wallCabs.splice(i+1,0,run.wallCabs.splice(i,1)[0]);saveAll();renderDesign();rebuildKitchen(false);}};row.appendChild(dn);
           const rm=document.createElement('button');rm.className='iconbtn';rm.textContent='\u2715';rm.onclick=()=>{run.wallCabs.splice(i,1);saveAll();renderDesign();rebuildKitchen(false);};row.appendChild(rm);
