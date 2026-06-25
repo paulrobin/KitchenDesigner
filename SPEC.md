@@ -129,8 +129,7 @@ filler panel, no door/handle, worktop over; placed where two runs meet), `fridge
 Appliance units (`dishwasher`, `washing`, `fridgeUC`, `fridge`, `americanFridge`) take an optional `integrated` flag —
 true = a cabinet panel front, false = a visible free-standing appliance (stainless / white goods). Default integrated,
 except `americanFridge` which defaults free-standing.
-`sink` units take optional `sinkType` (`inset` 1.5-bowl | `single` | `undermount` | `belfast` apron — Belfast replaces
-the worktop run with a ceramic top) and `tapStyle` (`mixer` | `swan` | `bridge`).
+`sink` units take an optional `tapStyle` (`mixer` | `swan` | `bridge`).
 Door/handle styles and worktop/floor finishes are global (above); they drive both the 3D model and the CAD elevations.
 
 **Auto-derived from the spec when building:**
@@ -259,4 +258,4 @@ colours and lighting.
 - **Door & handle styles** — Global **door style** (`shaker` / `slab` / `beaded`) and **handle style** (`bar` / `knob` / `cup`) selectors in the Design tab. Door faces and handles dispatch on these everywhere (3D model + CAD elevations: shaker/beaded show an inset panel, beaded adds tongue-and-groove lines; knobs/cup pulls draw as a dot / arc). Existing designs default to shaker + bar.
 - **Worktop material & edge** — Global **worktop material** (`quartz` / `granite` / `laminate` / `wood`, driving roughness/clearcoat/texture) and **edge profile** (`square` / `bevel` / `bullnose`, driving the worktop edge radius). The chosen door + worktop are noted in the CAD title block.
 - **Floor finishes** — Global **floor finish** selector (`wood` / `tile` / `stone` / `vinyl` / `concrete`); tiles use a new procedural grout-grid texture. Floor colour stays user-controlled in the Styling tab.
-- **Sink detail** — Per-`sink` **sink type** (`inset` 1.5-bowl / `single` / `undermount` / `belfast`) and **tap style** (`mixer` / `swan` / `bridge`); Belfast renders an apron front with a ceramic top (no worktop over it) in 3D and elevation. Per-unit cycle buttons on the unit row; plan shows a BELFAST label.
+- **Tap style** — Per-`sink` **tap style** (`mixer` / `swan` / `bridge`) via a cycle button on the unit row; reflected in the 3D model. (An earlier sink bowl-type option — inset/single/undermount/Belfast — was removed.)

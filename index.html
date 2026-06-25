@@ -674,10 +674,9 @@
   function barOn(group,x,y,len,horizontal){const h=makeHandle(len,horizontal);h.position.set(x,y,BASE_DEPTH/2+0.012);group.add(h);}
 
   /* ===== unit factory (built facing +z, front at z=BASE_DEPTH/2) ===== */
-  function makeUnit(type,width,handleSide,integrated,opts){
+  function makeUnit(type,width,handleSide,integrated){
     const g=new THREE.Group(),front=BASE_DEPTH/2;
     const hs=(handleSide==='L'?-1:1),hw=(spec.handleWidth==null?0.13:spec.handleWidth);
-    const sinkType=(opts&&opts.sinkType)||'inset';
     const integ=(type==='americanFridge')?(integrated===true):(integrated!==false);
     const tall=(type==='fridge'||type==='larder'||type==='ovenTower'||type==='americanFridge');
     if(tall){const H=TALL_H,bodyH=H-PLINTH_H,cy=PLINTH_H+bodyH/2,wide=(type==='americanFridge');
@@ -740,17 +739,13 @@
         barOn(g,hs*(width*0.5-0.06),faceY,hw,false);
       } else {g.add(rbox(width-0.03,bodyH-0.02,0.03,matSteel,0,faceY,front+0.012,0.01));
         const bar=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.013,bodyH*0.5,12),matChrome);bar.position.set(hs*(width*0.5-0.05),faceY,front+0.05);g.add(bar);}
-    } else if(type==='sink'){isSink=true;
-      if(sinkType==='belfast'){const apronH=0.24;
-        g.add(rbox(width-0.02,apronH,0.05,matCeramic,0,DOOR_TOP-apronH/2,front+0.02,0.012));
-        const dH=bodyH-apronH-0.02;if(dH>0.12){const f=doorFace(width-2*REVEAL,dH-0.02,mats.base);f.position.set(0,PLINTH_H+dH/2,front+0.012);g.add(f);barOn(g,hs*(width*0.5-0.06),PLINTH_H+dH/2,hw,false);}
-      } else {const f=doorFace(width-2*REVEAL,bodyH-2*REVEAL,mats.base);f.position.set(0,faceY,front+0.012);g.add(f);
-        barOn(g,hs*(width*0.5-0.06),faceY,hw,false);}
+    } else if(type==='sink'){isSink=true;const f=doorFace(width-2*REVEAL,bodyH-2*REVEAL,mats.base);f.position.set(0,faceY,front+0.012);g.add(f);
+      barOn(g,hs*(width*0.5-0.06),faceY,hw,false);
     } else if(type==='corner'){ /* blank dead-corner filler: flat panel, no door, no handle */
       g.add(flatbox(width-2*REVEAL,bodyH-2*REVEAL,0.02,mats.base,0,faceY,front+0.01));
     } else {const f=doorFace(width-2*REVEAL,bodyH-2*REVEAL,mats.base);f.position.set(0,faceY,front+0.012);g.add(f);
       barOn(g,hs*(width*0.5-0.06),faceY,hw,false);}
-    return{group:g,worktop:type!=='range'&&!(type==='sink'&&sinkType==='belfast'),tall:false,isSink,isOven,isRange,isCorner:type==='corner',kind:type};
+    return{group:g,worktop:type!=='range',tall:false,isSink,isOven,isRange,isCorner:type==='corner',kind:type};
   }
   function makeWallUnit(type,width){const g=new THREE.Group(),h=WALL_Y1-WALL_Y0,front=WALL_DEPTH/2,cy=WALL_Y0+h/2,hw=(spec.handleWidth==null?0.13:spec.handleWidth);
     if(type==='extractor')return makeExtractor();
@@ -788,22 +783,10 @@
       const lever=new THREE.Mesh(new THREE.CylinderGeometry(0.01,0.01,0.1,12),matChrome);lever.rotation.x=Math.PI/2.6;lever.position.set(0,COUNTER_H+0.07,-0.14);g.add(lever);
     }
   }
-  function makeSink(width,sinkType,tapStyle){const g=new THREE.Group(),cz=0;
-    const ceramic=(sinkType==='belfast'),bowlMat=ceramic?matCeramic:matSinkInner,topMat=ceramic?matCeramic:matSteel;
-    const sw=Math.min(0.54,width-0.08);
-    if(sinkType==='undermount'){
-      bowlBox(g,bowlMat,0,cz,sw,0.4,0.2,COUNTER_H-WT_TH-0.002);
-    } else if(ceramic){
-      g.add(rbox(width-0.02,0.06,0.52,topMat,0,COUNTER_H-0.005,cz,0.012));
-      bowlBox(g,bowlMat,0,cz,Math.min(0.5,width-0.08),0.42,0.26,COUNTER_H-0.03);
-    } else if(sinkType==='single'){
-      g.add(flatbox(sw+0.06,0.02,0.42,topMat,0,COUNTER_H-0.002,cz));
-      bowlBox(g,bowlMat,0,cz,sw,0.36,0.2,COUNTER_H-0.004);
-    } else {
-      g.add(flatbox(0.5,0.02,0.4,topMat,0,COUNTER_H-0.002,cz));
-      bowlBox(g,bowlMat,-0.1,cz,0.28,0.34,0.2,COUNTER_H-0.004);
-      bowlBox(g,bowlMat,0.18,cz,0.16,0.34,0.14,COUNTER_H-0.004);
-    }
+  function makeSink(width,tapStyle){const g=new THREE.Group(),cz=0;
+    g.add(flatbox(0.5,0.02,0.4,matSteel,0,COUNTER_H-0.002,cz));
+    bowlBox(g,matSinkInner,-0.1,cz,0.28,0.34,0.2,COUNTER_H-0.004);
+    bowlBox(g,matSinkInner,0.18,cz,0.16,0.34,0.14,COUNTER_H-0.004);
     addTap(g,tapStyle);return g;}
   function makeHob(){const g=new THREE.Group();g.add(rbox(0.62,0.03,0.5,matDarkGlass,0,COUNTER_H+0.015,0,0.01));
     const bg=new THREE.CylinderGeometry(0.055,0.06,0.02,18);
@@ -821,13 +804,12 @@
   const WORKTOP_MATERIALS=[['quartz','Quartz / stone'],['granite','Granite (polished)'],['laminate','Laminate (matt)'],['wood','Solid wood / oak']];
   const WORKTOP_EDGES=[['square','Square'],['bevel','Bevelled'],['bullnose','Bullnose (rounded)']];
   const FLOOR_MATERIALS=[['wood','Wood / oak planks'],['tile','Tiles'],['stone','Stone / slate'],['vinyl','Vinyl / lino'],['concrete','Polished concrete']];
-  const SINK_TYPES=[['inset','Inset 1.5 bowl'],['single','Inset single'],['undermount','Undermount'],['belfast','Belfast / butler']];
   const TAP_STYLES=[['mixer','Mixer'],['swan','Swan-neck'],['bridge','Bridge']];
   const DEFAULT_SPEC={
     layout:'L',ceiling:2.6,worktopEndOverhang:0.01,handleWidth:0.13,endPanels:true,cornice:true,doorStyle:'shaker',handleStyle:'bar',worktopMaterial:'quartz',worktopEdge:'square',floorMaterial:'wood',
     runs:{
       A:{wallUnits:true,units:[{type:'door',width:0.6},{type:'drawers',width:0.6},{type:'oven',width:0.6},{type:'drawers',width:0.6},{type:'door',width:0.8},{type:'door',width:0.8}],wallCabs:[{type:'door',width:0.6},{type:'door',width:0.6},{type:'extractor',width:0.6},{type:'door',width:0.6},{type:'door',width:0.8},{type:'door',width:0.8}]},
-      B:{wallUnits:false,units:[{type:'door',width:0.6},{type:'drawers',width:0.6},{type:'sink',width:0.6,sinkType:'inset',tapStyle:'mixer'},{type:'door',width:0.8},{type:'door',width:0.8}],wallCabs:[]},
+      B:{wallUnits:false,units:[{type:'door',width:0.6},{type:'drawers',width:0.6},{type:'sink',width:0.6,tapStyle:'mixer'},{type:'door',width:0.8},{type:'door',width:0.8}],wallCabs:[]},
       C:{wallUnits:false,units:[{type:'door',width:0.6},{type:'larder',width:0.6},{type:'door',width:0.6}],wallCabs:[]},
     },
     window:{enabled:true,wall:'left',centre:2.1,width:1.2,height:0.9,sill:1.1},
@@ -889,9 +871,9 @@
     if(ep&&endExp&&run.units[lastIdx]&&run.units[lastIdx].type!=='gap'){const ph=tallType(run.units[lastIdx].type)?TALL_H:DOOR_TOP;placeBox(f,f.start+total+0.0075,0.31,ph/2,0.015,BASE_DEPTH+0.02,ph,mats.base,false);}
     if(ep){let gp=f.start;run.units.forEach((u,i)=>{const w=+u.width||0.6;if(u.type!=='gap'){const ph=tallType(u.type)?TALL_H:DOOR_TOP;if(run.units[i-1]&&run.units[i-1].type==='gap')placeBox(f,gp-0.0075,0.31,ph/2,0.015,BASE_DEPTH+0.02,ph,mats.base,false);if(run.units[i+1]&&run.units[i+1].type==='gap')placeBox(f,gp+w+0.0075,0.31,ph/2,0.015,BASE_DEPTH+0.02,ph,mats.base,false);}gp+=w;});}
     {let pc=f.start,ps=null;run.units.forEach(u=>{const w=+u.width||0.6;if(u.type==='gap'){if(ps!==null){placeBox(f,(ps+pc)/2,0.25,PLINTH_H/2,pc-ps,0.46,PLINTH_H,mats.base,false);ps=null;}}else{if(ps===null)ps=pc;}pc+=w;});if(ps!==null)placeBox(f,(ps+pc)/2,0.25,PLINTH_H/2,pc-ps,0.46,PLINTH_H,mats.base,false);}
-    run.units.forEach((spec_u,idx)=>{const w=+spec_u.width||0.6;const u=makeUnit(spec_u.type,w,spec_u.handle||'R',spec_u.integrated,{sinkType:spec_u.sinkType,tapStyle:spec_u.tapStyle});placeGroup(f,along+w/2,BASE_DEPTH/2,u.group,0);
+    run.units.forEach((spec_u,idx)=>{const w=+spec_u.width||0.6;const u=makeUnit(spec_u.type,w,spec_u.handle||'R',spec_u.integrated);placeGroup(f,along+w/2,BASE_DEPTH/2,u.group,0);
       if(u.worktop){let sx=(idx===firstWt?oh+((firstWt===0&&startExp&&ep)?0.015:0):0.006),ex=(idx===lastWt?oh+((lastWt===lastIdx&&endExp&&ep)?0.015:0):0.006);if(ep&&run.units[idx-1]&&run.units[idx-1].type==='gap')sx=Math.max(sx,oh+0.015);if(ep&&run.units[idx+1]&&run.units[idx+1].type==='gap')ex=Math.max(ex,oh+0.015);const a0=along-sx,a1=along+w+ex;placeBox(f,(a0+a1)/2,BASE_DEPTH/2+0.02,COUNTER_H-WT_TH/2,a1-a0,BASE_DEPTH+0.05,WT_TH,mats.worktop,true,wtEdgeR());}
-      if(u.isSink){const sg=makeSink(w,spec_u.sinkType||'inset',spec_u.tapStyle||'mixer');placeGroup(f,along+w/2,BASE_DEPTH/2,sg,0);const p=framePoint(f,along+w/2,BASE_DEPTH/2);anchors.sink={x:p.x,z:p.z};}
+      if(u.isSink){const sg=makeSink(w,spec_u.tapStyle||'mixer');placeGroup(f,along+w/2,BASE_DEPTH/2,sg,0);const p=framePoint(f,along+w/2,BASE_DEPTH/2);anchors.sink={x:p.x,z:p.z};}
       if(u.isOven||u.isRange){if(!u.isRange){const hg=makeHob();placeGroup(f,along+w/2,BASE_DEPTH/2,hg,0);}const p=framePoint(f,along+w/2,BASE_DEPTH/2);anchors.hob={x:p.x,z:p.z};}
       along+=w;});
     if(run.wallUnits!==false&&Array.isArray(run.wallCabs)){let wa=f.start;run.wallCabs.forEach(wc=>{const ww=+wc.width||0.6;if(wc.type!=='gap'){const wg=makeWallUnit(wc.type,ww);placeGroup(f,wa+ww/2,WALL_DEPTH/2,wg,0);}wa+=ww;});}}
@@ -1083,7 +1065,7 @@
         const wi=document.createElement('input');wi.type='number';wi.value=u.width;wi.min=0.3;if(u.type!=='gap')wi.max=1.2;wi.step=0.05;wi.oninput=()=>{u.width=parseFloat(wi.value)||0.6;saveAll();rebuildKitchen(false);t.textContent=runNames[rk]+'  ('+sumW(run).toFixed(2)+' m)';};row.appendChild(wi);
         if(['door','fridge','larder','fridgeUC'].includes(u.type)){const hsb=document.createElement('button');hsb.className='iconbtn';hsb.title='Handle side (left / right)';hsb.textContent=(u.handle==='L'?'L':'R');hsb.onclick=()=>{u.handle=(u.handle==='L'?'R':'L');saveAll();renderDesign();rebuildKitchen(false);};row.appendChild(hsb);}
         if(['dishwasher','washing','fridgeUC','fridge','americanFridge'].includes(u.type)){const ib=document.createElement('button');ib.className='iconbtn';ib.style.width='auto';ib.style.padding='0 6px';ib.title='Integrated (panel) or free-standing';const ei=(u.type==='americanFridge')?(u.integrated===true):(u.integrated!==false);ib.textContent=ei?'Int':'Free';ib.onclick=()=>{const cur=(u.type==='americanFridge')?(u.integrated===true):(u.integrated!==false);u.integrated=!cur;saveAll();renderDesign();rebuildKitchen(false);};row.appendChild(ib);}
-        if(u.type==='sink'){row.appendChild(cycleBtn(u.sinkType||'inset',SINK_TYPES,'Sink type',(v)=>{u.sinkType=v;saveAll();renderDesign();rebuildKitchen(false);}));row.appendChild(cycleBtn(u.tapStyle||'mixer',TAP_STYLES,'Tap style',(v)=>{u.tapStyle=v;saveAll();renderDesign();rebuildKitchen(false);}));}
+        if(u.type==='sink'){row.appendChild(cycleBtn(u.tapStyle||'mixer',TAP_STYLES,'Tap style',(v)=>{u.tapStyle=v;saveAll();renderDesign();rebuildKitchen(false);}));}
         const up=document.createElement('button');up.className='iconbtn';up.textContent='\u2191';up.onclick=()=>{if(i>0){run.units.splice(i-1,0,run.units.splice(i,1)[0]);saveAll();renderDesign();rebuildKitchen(false);}};row.appendChild(up);
         const dn=document.createElement('button');dn.className='iconbtn';dn.textContent='\u2193';dn.onclick=()=>{if(i<run.units.length-1){run.units.splice(i+1,0,run.units.splice(i,1)[0]);saveAll();renderDesign();rebuildKitchen(false);}};row.appendChild(dn);
         const rm=document.createElement('button');rm.className='iconbtn';rm.textContent='\u2715';rm.onclick=()=>{run.units.splice(i,1);saveAll();renderDesign();rebuildKitchen(false);};row.appendChild(rm);
@@ -1218,7 +1200,7 @@
   function openPresent(w){return w==='back'||(w==='left'&&spec.layout!=='single')||(w==='right'&&spec.layout==='U');}
   function planModel(){
     const A=spec.runs.A,B=spec.runs.B,C=spec.runs.C,G=cornerGeom();
-    const mk=(run,wall,start,len)=>{let a=start;const units=run.units.map(u=>{const w=+u.width||0.6;const o={type:u.type,width:w,a0:a,a1:a+w,handle:u.handle||'R',integrated:u.integrated,sinkType:u.sinkType};a+=w;return o;});
+    const mk=(run,wall,start,len)=>{let a=start;const units=run.units.map(u=>{const w=+u.width||0.6;const o={type:u.type,width:w,a0:a,a1:a+w,handle:u.handle||'R',integrated:u.integrated};a+=w;return o;});
       let wa=start;const wallCabs=(run.wallUnits!==false&&Array.isArray(run.wallCabs))?run.wallCabs.map(c=>{const w=+c.width||0.6;const o={type:c.type,width:w,a0:wa,a1:wa+w};wa+=w;return o;}):[];
       return{key:wall==='back'?'A':wall==='left'?'B':'C',wall,start,len,wallUnits:!!run.wallUnits,units,wallCabs};};
     const runs=[mk(A,'back',G.axShift,G.lenA)];
@@ -1269,11 +1251,11 @@
   }
   function drawPlanSymbol(g,wall,u,r){
     const cx=r.x+r.w/2,cy=r.y+r.h/2;
-    if(u.type==='sink'){const ins=92,st=u.sinkType||'inset';
+    if(u.type==='sink'){const ins=92;
       g.appendChild(sN('rect',{x:RND(r.x+ins),y:RND(r.y+ins),width:RND(r.w-2*ins),height:RND(r.h-2*ins),rx:34,ry:34,class:'sym'}));
       g.appendChild(sN('circle',{cx:RND(cx),cy:RND(cy),r:34,class:'sym'}));
       const ws=wallSideC(wall,r);g.appendChild(sN('circle',{cx:RND((ws[0]*2+cx)/3),cy:RND((ws[1]*2+cy)/3),r:26,class:'symf'}));
-      planLabel(g,r,st==='belfast'?'BELFAST':'SINK');return;}
+      planLabel(g,r,'SINK');return;}
     if(u.type==='oven'||u.type==='range'){[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([sx,sy])=>g.appendChild(sN('circle',{cx:RND(cx+sx*r.w*0.2),cy:RND(cy+sy*r.h*0.2),r:RND(Math.min(r.w,r.h)*0.16),class:'sym'})));planLabel(g,r,u.type==='range'?'RANGE':'HOB');return;}
     if(u.type==='dishwasher')planLabel(g,r,'DW');
     else if(u.type==='washing')planLabel(g,r,'WASH');
@@ -1403,15 +1385,11 @@
     } else if(u.type==='dishwasher'){if(integ)facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);else{eRect(g,x0+10,w-20,EY,DOOR_TOP,(DOOR_TOP-PLINTH_H)*MM,'appl',T);eRect(g,x0+30,w-60,EY,DOOR_TOP-0.02,0.04*MM,'sym',T);}g.appendChild(sText(T.EX(x0+w/2),EY((PLINTH_H+DOOR_TOP)/2)+28,'DW','labs',null,null,'middle'));
     } else if(u.type==='washing'){if(integ)facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);else{eRect(g,x0+10,w-20,EY,DOOR_TOP,(DOOR_TOP-PLINTH_H)*MM,'appl',T);g.appendChild(sN('circle',{cx:RND(T.EX(x0+w/2)),cy:RND(EY((PLINTH_H+DOOR_TOP)/2-0.02)),r:RND(0.15*MM),class:'sym'}));}g.appendChild(sText(T.EX(x0+w/2),EY(PLINTH_H+0.1),'WASH','labs',null,null,'middle'));
     } else if(u.type==='fridgeUC'){if(integ){facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);handleV(g,x0+w/2+hs*(w/2-70),DOOR_TOP-0.30,DOOR_TOP-0.06,EY,T);}else{eRect(g,x0+10,w-20,EY,DOOR_TOP,(DOOR_TOP-PLINTH_H)*MM,'appl',T);handleV(g,x0+w/2+hs*(w/2-60),DOOR_TOP-0.34,DOOR_TOP-0.06,EY,T);}g.appendChild(sText(T.EX(x0+w/2),EY(PLINTH_H+0.1),'FRIDGE','labs',null,null,'middle'));
-    } else if(u.type==='sink'){const st=u.sinkType||'inset';
-      if(st==='belfast'){const apronH=0.24;eRect(g,x0+20,w-40,EY,DOOR_TOP,apronH*MM,'appl',T);
-        facePanel(g,x0,x1,PLINTH_H,DOOR_TOP-apronH,EY,T);handleV(g,x0+w/2+hs*(w/2-70),DOOR_TOP-apronH-0.22,DOOR_TOP-apronH-0.06,EY,T);
-        g.appendChild(sText(T.EX(x0+w/2),EY(DOOR_TOP-apronH/2)+30,'BELFAST','labs',null,null,'middle'));
-      } else {facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);handleV(g,x0+w/2+hs*(w/2-70),DOOR_TOP-0.28,DOOR_TOP-0.06,EY,T);}
+    } else if(u.type==='sink'){facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);handleV(g,x0+w/2+hs*(w/2-70),DOOR_TOP-0.28,DOOR_TOP-0.06,EY,T);
       const tx=RND(T.EX(x0+w/2)),tx2=RND(T.EX(x0+w/2+0.14*MM));g.appendChild(sN('path',{d:`M ${tx} ${RND(EY(COUNTER_H))} C ${tx} ${RND(EY(COUNTER_H+0.26))} ${tx2} ${RND(EY(COUNTER_H+0.26))} ${tx2} ${RND(EY(COUNTER_H+0.1))}`,class:'sym'}));
     } else if(u.type==='corner'){eRect(g,x0,w,EY,DOOR_TOP,(DOOR_TOP-PLINTH_H)*MM,'cab',T);g.appendChild(sText(T.EX(x0+w/2),EY((PLINTH_H+DOOR_TOP)/2)+30,'CORNER','labs',null,null,'middle'));
     } else {facePanel(g,x0,x1,PLINTH_H,DOOR_TOP,EY,T);handleV(g,x0+w/2+hs*(w/2-70),DOOR_TOP-0.30,DOOR_TOP-0.06,EY,T);}
-    if(u.type!=='range'&&!(u.type==='sink'&&(u.sinkType||'inset')==='belfast'))eRect(g,x0,w,EY,COUNTER_H,WT_TH*MM,'cab',T);
+    if(u.type!=='range')eRect(g,x0,w,EY,COUNTER_H,WT_TH*MM,'cab',T);
   }
   function drawElevWallCabUnit(g,run,wc,EY,T){
     if(wc.type==='gap')return;
